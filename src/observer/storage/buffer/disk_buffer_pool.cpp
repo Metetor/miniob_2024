@@ -309,6 +309,13 @@ RC DiskBufferPool::close_file()
   return RC::SUCCESS;
 }
 
+//added DiskBufferPool.remove_file by ywm
+RC DiskBufferPool::remove_file()
+{
+  bp_manager_.remove_file(file_name_.c_str());
+  return RC::SUCCESS;
+}
+
 RC DiskBufferPool::get_this_page(PageNum page_num, Frame **frame)
 {
   RC rc  = RC::SUCCESS;
@@ -883,6 +890,15 @@ RC BufferPoolManager::close_file(const char *_file_name)
   lock_.unlock();
 
   delete bp;
+  return RC::SUCCESS;
+}
+
+//added remove_file by ywm
+RC BufferPoolManager::remove_file(const char *_file_name)
+{
+  //call close_file to free resource in memory and clear disk using ::remove
+  close_file(_file_name);
+  ::remove(_file_name);
   return RC::SUCCESS;
 }
 

@@ -161,6 +161,33 @@ RC Db::create_table(const char *table_name, span<const AttrInfoSqlNode> attribut
   return RC::SUCCESS;
 }
 
+//added drop_table implementation by ywm
+RC Db::drop_table(const char *table_name)
+{
+  RC rc=RC::SUCCESS;
+  //check table_name
+  if(opened_tables_.count(table_name)==0){
+    LOG_WARN("%s doesn't exist.", table_name);
+    return RC::SCHEMA_TABLE_NOT_EXIST;    
+  }
+
+  // 文件路径可以移到Table模块
+  std::string table_file_path = table_meta_file(path_.c_str(), table_name);
+  //get table and drop
+  Table *table=find_table(table_name);
+  rc=table->drop(this,table_file_path.c_str());
+  if (rc != RC::SUCCESS) {
+    LOG_ERROR("Failed to drop table %s.", table_name);
+    return rc;
+  }
+
+  delete table;
+  opened_tables_.erase(table_name);
+
+  LOG_INFO("Drop table success. table name=%s", table_name);
+  return RC::SUCCESS;
+}
+
 Table *Db::find_table(const char *table_name) const
 {
   unordered_map<string, Table *>::const_iterator iter = opened_tables_.find(table_name);

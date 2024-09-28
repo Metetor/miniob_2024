@@ -22,7 +22,7 @@ See the Mulan PSL v2 for more details. */
 struct EventCallbackAg;
 
 /**
- * @brief 简单线程池模型。使用了模拟Java线程池接口的线程池，所以脚JavaThreadPool
+ * @brief 简单线程池模型。使用了模拟Java线程池接口的线程池，所以叫JavaThreadPool
  * @ingroup ThreadHandler
  * @details 使用线程池处理连接上的消息。使用libevent监听连接事件。
  * libevent 是一个常用并且高效的异步事件消息库，可以阅读手册了解更多。

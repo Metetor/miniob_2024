@@ -127,6 +127,39 @@ RC Table::create(Db *db, int32_t table_id, const char *path, const char *name, c
   return rc;
 }
 
+//added drop_implementation by ywm
+RC Table::drop(Db *db,const char *path)
+{
+  RC rc=RC::SUCCESS;
+
+  //删除文件
+  if(::remove(path)<0){
+    LOG_ERROR("Failed to delete table file. filename=%s,errmsg=%s",path,strerror(errno));
+    return RC::INTERNAL;
+  }
+  //删除data文件
+  std::string data_file = table_data_file(base_dir_.c_str(), table_meta_.name());
+  BufferPoolManager &bpm = db->buffer_pool_manager();
+  rc = bpm.remove_file(data_file.c_str()); 
+  //note,need to set data_buffer_pool null,because already free in remove_file
+  data_buffer_pool_=nullptr;
+
+  //释放record_handler
+  if(record_handler_!=nullptr){
+    delete record_handler_;
+    record_handler_=nullptr;
+  }
+
+  //note:清除索引及对应的内存资源
+  for(auto &index:indexes_){
+    //通过调用index->destroy()释放资源
+    index->destroy();
+    delete index;
+    index=nullptr;
+  }
+  return rc;
+}
+
 RC Table::open(Db *db, const char *meta_file, const char *base_dir)
 {
   // 加载元数据文件

@@ -37,13 +37,13 @@ RC CharType::cast_to(const Value &val, AttrType type, Value &result) const
       //get year,month,day
       int y,m,d;
       if(sscanf(val.value_.pointer_value_,"%d-%d-%d",&y,&m,&d)!=3){
-        LOG_WARN("invalid data format:%s",val.value_.int_value_);
+        LOG_WARN("invalid data format:%s",val.value_.pointer_value_);
         return RC::INVALID_ARGUMENT;
       }
       //date check
       bool check_ret=common::check_date(y,m,d);
       if(!check_ret){
-        LOG_WARN("invalid data format:%s",val.value_.int_value_);
+        LOG_WARN("invalid data format:%s",val.value_.pointer_value_);
         return RC::INVALID_ARGUMENT;
       }
       result.set_date(y,m,d);

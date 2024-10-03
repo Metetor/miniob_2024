@@ -221,6 +221,7 @@ RC Table::open(Db *db, const char *meta_file, const char *base_dir)
 RC Table::insert_record(Record &record)
 {
   RC rc = RC::SUCCESS;
+  //call record_handler_->insert_record
   rc    = record_handler_->insert_record(record.data(), table_meta_.record_size(), &record.rid());
   if (rc != RC::SUCCESS) {
     LOG_ERROR("Insert record failed. table name=%s, rc=%s", table_meta_.name(), strrc(rc));
@@ -553,6 +554,18 @@ Index *Table::find_index_by_field(const char *field_name) const
   }
   return nullptr;
 }
+
+//added update_record by ywm
+// RC Table::update_record(Record &record)
+// {
+//   //TODO
+//   RC rc=RC::SUCCESS;
+//   rc=record_handler_->update_record();
+//   if(rc!=RC::SUCCESS){
+//     //add LOG_INFO
+//   }
+//   return RC::SUCCESS;
+// }
 
 RC Table::sync()
 {

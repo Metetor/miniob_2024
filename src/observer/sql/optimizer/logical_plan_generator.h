@@ -24,6 +24,7 @@ class CalcStmt;
 class SelectStmt;
 class FilterStmt;
 class InsertStmt;
+class UpdateStmt;
 class DeleteStmt;
 class ExplainStmt;
 class LogicalOperator;
@@ -41,6 +42,7 @@ private:
   RC create_plan(SelectStmt *select_stmt, std::unique_ptr<LogicalOperator> &logical_operator);
   RC create_plan(FilterStmt *filter_stmt, std::unique_ptr<LogicalOperator> &logical_operator);
   RC create_plan(InsertStmt *insert_stmt, std::unique_ptr<LogicalOperator> &logical_operator);
+  // RC create_plan(UpdateStmt *update_stmt, std::unique_ptr<LogicalOperator> &logical_operator);
   RC create_plan(DeleteStmt *delete_stmt, std::unique_ptr<LogicalOperator> &logical_operator);
   RC create_plan(ExplainStmt *explain_stmt, std::unique_ptr<LogicalOperator> &logical_operator);
 

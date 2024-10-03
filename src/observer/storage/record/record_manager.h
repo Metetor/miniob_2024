@@ -389,6 +389,11 @@ public:
   RC insert_record(const char *data, int record_size, RID *rid);
 
   /**
+   * @brief 更新记录
+   */
+  RC update_record();
+
+  /**
    * @brief 数据库恢复时，在指定文件指定位置插入数据
    *
    * @param data        记录内容

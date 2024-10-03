@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
+#include <iostream>
 
 #include "common/log/log.h"
 #include "common/lang/string.h"
@@ -364,24 +365,44 @@ type:
     | DATE_T   { $$ =static_cast<int>(AttrType::DATES);}
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
-    INSERT INTO ID VALUES LBRACE value value_list RBRACE 
+    INSERT INTO ID VALUES LBRACE value_list RBRACE 
     {
       $$ = new ParsedSqlNode(SCF_INSERT);
       $$->insertion.relation_name = $3;
-      if ($7 != nullptr) {
-        $$->insertion.values.swap(*$7);
-        delete $7;
+      // 将整个 value_list 移动到 insertion.values 中
+      if ($6 != nullptr) {
+        $$->insertion.values.swap(*$6);
+        delete $6;
       }
-      $$->insertion.values.emplace_back(*$6);
-      std::reverse($$->insertion.values.begin(), $$->insertion.values.end());
-      delete $6;
+      // if ($7 != nullptr) {
+      //   $$->insertion.values.swap(*$7);
+      //   delete $7;
+      // }
+      // $$->insertion.values.emplace_back(*$6);
+      // std::reverse($$->insertion.values.begin(), $$->insertion.values.end());
+      // delete $6;
       free($3);
     }
     ;
 
 value_list:
+    /* 单独一个 value 的情况 */
+    value {
+      $$ = new std::vector<Value>();
+      $$->emplace_back(*$1);
+      delete $1;
+    }
+    | value_list COMMA value {
+      // 从左到右依次构建 value_list
+      $$ = $1;
+      $$->emplace_back(*$3);
+      delete $3;
+    }
+    ;
+
+//value_list:
     /* empty */
-    {
+    /* {
       $$ = nullptr;
     }
     | COMMA value value_list  { 
@@ -393,8 +414,9 @@ value_list:
       $$->emplace_back(*$2);
       delete $2;
     }
-    ;
+    ; */
 value:
+    //value type是Value*
     NUMBER {
       $$ = new Value((int)$1);
       @$ = @1;

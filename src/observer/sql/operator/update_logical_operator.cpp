@@ -14,5 +14,10 @@ See the Mulan PSL v2 for more details. */
 
 #include "sql/operator/update_logical_operator.h"
 
-UpdateLogicalOperator::UpdateLogicalOperator(Table *table, std::vector<Value> values) : table_(table), values_(values)
-{}
+UpdateLogicalOperator::UpdateLogicalOperator(Table *table, std::vector<Value> values, const char *field_name)
+    : table_(table), values_(values)
+{
+  field_name_ = new char[strlen(field_name) + 1];
+  strcpy(field_name_, field_name);
+  LOG_INFO("UpdateLogicalOperator,construct function do nothing except copy");
+}

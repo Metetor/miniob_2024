@@ -298,30 +298,56 @@ drop_index_stmt:      /*drop index 语句的语法解析树*/
     }
     ;
 create_table_stmt:    /*create table 语句的语法解析树*/
-    CREATE TABLE ID LBRACE attr_def attr_def_list RBRACE storage_format
+    CREATE TABLE ID LBRACE attr_def_list RBRACE storage_format
     {
       $$ = new ParsedSqlNode(SCF_CREATE_TABLE);
       CreateTableSqlNode &create_table = $$->create_table;
       create_table.relation_name = $3;
       free($3);
 
-      std::vector<AttrInfoSqlNode> *src_attrs = $6;
+      //direct copy
+      if($5!=nullptr){
+        create_table.attr_infos.swap(*$5);
+        delete $5;
+      }
+      if($7 != nullptr) {
+        create_table.storage_format = $7;
+        free($7);
+      }
+      // std::vector<AttrInfoSqlNode> *src_attrs = $6;
 
-      if (src_attrs != nullptr) {
-        create_table.attr_infos.swap(*src_attrs);
-        delete src_attrs;
-      }
-      create_table.attr_infos.emplace_back(*$5);
-      std::reverse(create_table.attr_infos.begin(), create_table.attr_infos.end());
-      delete $5;
-      if ($8 != nullptr) {
-        create_table.storage_format = $8;
-        free($8);
-      }
+      // if (src_attrs != nullptr) {
+      //   create_table.attr_infos.swap(*src_attrs);
+      //   delete src_attrs;
+      // }
+      // create_table.attr_infos.emplace_back(*$5);
+      // std::reverse(create_table.attr_infos.begin(), create_table.attr_infos.end());
+      // delete $5;
+      // if ($8 != nullptr) {
+      //   create_table.storage_format = $8;
+      //   free($8);
+      // }
     }
     ;
+//changed by ywm
 attr_def_list:
-    /* empty */
+    attr_def
+    {
+      $$=new std::vector<AttrInfoSqlNode>();
+      $$->emplace_back(*$1);
+      delete $1;
+    }
+    |
+    attr_def_list COMMA attr_def
+    {
+      $$=$1;
+      $$->emplace_back(*$3);
+      delete $3;
+    }
+    ;
+
+/* attr_def_list:
+    // empty 
     {
       $$ = nullptr;
     }
@@ -335,7 +361,7 @@ attr_def_list:
       $$->emplace_back(*$2);
       delete $2;
     }
-    ;
+    ; */
     
 attr_def:
     ID type LBRACE number RBRACE 

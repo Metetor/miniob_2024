@@ -28,6 +28,9 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/index_scan_physical_operator.h"
 #include "sql/operator/insert_logical_operator.h"
 #include "sql/operator/insert_physical_operator.h"
+//add update's header here
+#include "sql/operator/update_logical_operator.h"
+#include "sql/operator/update_physical_operator.h"
 #include "sql/operator/join_logical_operator.h"
 #include "sql/operator/join_physical_operator.h"
 #include "sql/operator/predicate_logical_operator.h"
@@ -69,6 +72,10 @@ RC PhysicalPlanGenerator::create(LogicalOperator &logical_operator, unique_ptr<P
 
     case LogicalOperatorType::INSERT: {
       return create_plan(static_cast<InsertLogicalOperator &>(logical_operator), oper);
+    } break;
+
+    case LogicalOperatorType::UPDATE: {
+      return create_plan(static_cast<UpdateLogicalOperator &>(logical_operator), oper);
     } break;
 
     case LogicalOperatorType::DELETE: {
@@ -252,26 +259,59 @@ RC PhysicalPlanGenerator::create_plan(InsertLogicalOperator &insert_oper, unique
   return RC::SUCCESS;
 }
 
+//Update to be added
+RC PhysicalPlanGenerator::create_plan(UpdateLogicalOperator &update_oper, unique_ptr<PhysicalOperator> &oper)
+{
+  //copied from insert
+  Table                  *table           = update_oper.table();
+  vector<Value>          &values          = update_oper.values();
+  //大体框架按照delete的来，除了创建更新的物理算子时参数需要改变
+  vector<unique_ptr<LogicalOperator>> &child_opers = update_oper.children();
+
+  unique_ptr<PhysicalOperator> child_physical_oper;
+  RC rc = RC::SUCCESS;  
+  
+  if (!child_opers.empty()) {
+    LogicalOperator *child_oper = child_opers.front().get();
+    //创建子算子对应的物理算子和plan
+    rc = create(*child_oper, child_physical_oper);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to create physical operator. rc=%s", strrc(rc));
+      return rc;
+    }
+  }  
+
+  oper = unique_ptr<PhysicalOperator>(new UpdatePhysicalOperator(table, std::move(values),update_oper.field_name()));
+  if (child_physical_oper) {
+    //删除物理算子增加孩子算子节点
+    oper->add_child(std::move(child_physical_oper));
+  }
+  return rc;
+}
+
 RC PhysicalPlanGenerator::create_plan(DeleteLogicalOperator &delete_oper, unique_ptr<PhysicalOperator> &oper)
 {
+  //get predicator_oper(maybe null) and table_get_oper 
   vector<unique_ptr<LogicalOperator>> &child_opers = delete_oper.children();
 
   unique_ptr<PhysicalOperator> child_physical_oper;
 
   RC rc = RC::SUCCESS;
+  //delete逻辑算子的子算子处理
   if (!child_opers.empty()) {
     LogicalOperator *child_oper = child_opers.front().get();
-
+    //创建子算子对应的物理算子和plan
     rc = create(*child_oper, child_physical_oper);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to create physical operator. rc=%s", strrc(rc));
       return rc;
     }
   }
-
+  //创建删除物理算子
   oper = unique_ptr<PhysicalOperator>(new DeletePhysicalOperator(delete_oper.table()));
 
   if (child_physical_oper) {
+    //删除物理算子增加孩子算子节点
     oper->add_child(std::move(child_physical_oper));
   }
   return rc;

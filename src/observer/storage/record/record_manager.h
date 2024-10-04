@@ -391,7 +391,7 @@ public:
   /**
    * @brief 更新记录
    */
-  RC update_record();
+  RC update_record(const RID &rid, const char *data);
 
   /**
    * @brief 数据库恢复时，在指定文件指定位置插入数据

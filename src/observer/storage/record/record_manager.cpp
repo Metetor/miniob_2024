@@ -349,7 +349,7 @@ RC RowRecordPageHandler::delete_record(const RID *rid)
     return RC::RECORD_NOT_EXIST;
   }
 }
-
+// note:这里的update_record传入的data其实是一整条record的data
 RC RowRecordPageHandler::update_record(const RID &rid, const char *data)
 {
   ASSERT(rw_mode_ != ReadWriteMode::READ_ONLY, "cannot delete record from page while the page is readonly");
@@ -620,12 +620,31 @@ RC RecordFileHandler::recover_insert_record(const char *data, int record_size, c
   return record_page_handler->recover_insert_record(data, rid);
 }
 
-RC RecordFileHandler::delete_record(const RID *rid)
+// added RecordFileHandler::update_record
+// 根据RowRecordPageHandler的参数来看这里的data传入也需要是整个record_data
+//
+RC RecordFileHandler::update_record(const RID &rid, const char *data)
 {
   RC rc = RC::SUCCESS;
 
   unique_ptr<RecordPageHandler> record_page_handler(RecordPageHandler::create(storage_format_));
 
+  rc = record_page_handler->init(*disk_buffer_pool_, *log_handler_, rid.page_num, ReadWriteMode::READ_WRITE);
+  if (OB_FAIL(rc)) {
+    LOG_ERROR("Failed to init record page handler.page number=%d. rc=%s", rid.page_num, strrc(rc));
+    return rc;
+  }
+  // 先不考虑锁的问题
+  rc = record_page_handler->update_record(rid, data);
+  return rc;
+}
+
+RC RecordFileHandler::delete_record(const RID *rid)
+{
+  RC rc = RC::SUCCESS;
+
+  unique_ptr<RecordPageHandler> record_page_handler(RecordPageHandler::create(storage_format_));
+  // init
   rc = record_page_handler->init(*disk_buffer_pool_, *log_handler_, rid->page_num, ReadWriteMode::READ_WRITE);
   if (OB_FAIL(rc)) {
     LOG_ERROR("Failed to init record page handler.page number=%d. rc=%s", rid->page_num, strrc(rc));

@@ -127,35 +127,35 @@ RC Table::create(Db *db, int32_t table_id, const char *path, const char *name, c
   return rc;
 }
 
-//added drop_implementation by ywm
-RC Table::drop(Db *db,const char *path)
+// added drop_implementation by ywm
+RC Table::drop(Db *db, const char *path)
 {
-  RC rc=RC::SUCCESS;
+  RC rc = RC::SUCCESS;
 
-  //删除文件
-  if(::remove(path)<0){
+  // 删除文件
+  if (::remove(path) < 0) {
     LOG_ERROR("Failed to delete table file. filename=%s,errmsg=%s",path,strerror(errno));
     return RC::INTERNAL;
   }
-  //删除data文件
-  std::string data_file = table_data_file(base_dir_.c_str(), table_meta_.name());
-  BufferPoolManager &bpm = db->buffer_pool_manager();
-  rc = bpm.remove_file(data_file.c_str()); 
-  //note,need to set data_buffer_pool null,because already free in remove_file
-  data_buffer_pool_=nullptr;
+  // 删除data文件
+  std::string        data_file = table_data_file(base_dir_.c_str(), table_meta_.name());
+  BufferPoolManager &bpm       = db->buffer_pool_manager();
+  rc                           = bpm.remove_file(data_file.c_str());
+  // note,need to set data_buffer_pool null,because already free in remove_file
+  data_buffer_pool_ = nullptr;
 
-  //释放record_handler
-  if(record_handler_!=nullptr){
+  // 释放record_handler
+  if (record_handler_ != nullptr) {
     delete record_handler_;
-    record_handler_=nullptr;
+    record_handler_ = nullptr;
   }
 
-  //note:清除索引及对应的内存资源
-  for(auto &index:indexes_){
-    //通过调用index->destroy()释放资源
+  // note:清除索引及对应的内存资源
+  for (auto &index : indexes_) {
+    // 通过调用index->destroy()释放资源
     index->destroy();
     delete index;
-    index=nullptr;
+    index = nullptr;
   }
   return rc;
 }
@@ -221,8 +221,8 @@ RC Table::open(Db *db, const char *meta_file, const char *base_dir)
 RC Table::insert_record(Record &record)
 {
   RC rc = RC::SUCCESS;
-  //call record_handler_->insert_record
-  rc    = record_handler_->insert_record(record.data(), table_meta_.record_size(), &record.rid());
+  // call record_handler_->insert_record
+  rc = record_handler_->insert_record(record.data(), table_meta_.record_size(), &record.rid());
   if (rc != RC::SUCCESS) {
     LOG_ERROR("Insert record failed. table name=%s, rc=%s", table_meta_.name(), strrc(rc));
     return rc;
@@ -306,7 +306,7 @@ RC Table::make_record(int value_num, const Value *values, Record &record)
 
   for (int i = 0; i < value_num && OB_SUCC(rc); i++) {
     const FieldMeta *field = table_meta_.field(i + normal_field_start_index);
-    const Value &    value = values[i];
+    const Value     &value = values[i];
     if (field->type() != value.attr_type()) {
       Value real_value;
       rc = Value::cast_to(value, field->type(), real_value);
@@ -555,17 +555,42 @@ Index *Table::find_index_by_field(const char *field_name) const
   return nullptr;
 }
 
-//added update_record by ywm
-// RC Table::update_record(Record &record)
-// {
-//   //TODO
-//   RC rc=RC::SUCCESS;
-//   rc=record_handler_->update_record();
-//   if(rc!=RC::SUCCESS){
-//     //add LOG_INFO
-//   }
-//   return RC::SUCCESS;
-// }
+// added update_record by ywm
+RC Table::update_record(Record &record, const Value *values, int field_offset)
+{
+  RC rc = RC::SUCCESS;
+  // 这一部分之后可以考虑拆分出去
+  // some check还没有考虑，待增加
+  // 参考make_record实现record_data的更新
+  Record copy_record;
+  copy_record.copy_data(record.data(), record.len());
+  const int        normal_field_start_index = table_meta_.sys_field_num();
+  const FieldMeta *field                    = table_meta_.field(field_offset + normal_field_start_index);
+  const Value     &value                    = values[0];
+  if (field->type() != value.attr_type()) {
+    Value real_value;
+    rc = Value::cast_to(value, field->type(), real_value);
+    if (OB_FAIL(rc)) {
+      LOG_WARN("failed to cast value. table name:%s,field name:%s,value:%s ",
+            table_meta_.name(), field->name(), value.to_string().c_str());
+      return rc;
+    }
+    rc = set_value_to_record(copy_record.data(), real_value, field);
+  } else {
+    rc = set_value_to_record(copy_record.data(), value, field);
+  }
+
+  if (OB_FAIL(rc)) {
+    LOG_WARN("failed to update record. table name:%s", table_meta_.name());
+    return rc;
+  }
+
+  // 不能直接在record上做修改，而是应该在copy_record_data修改，防止后续
+  // update_record失败但是record_data却已经更新了
+  rc = record_handler_->update_record(record.rid(),copy_record.data());
+  // 一些状态检查和处理待做
+  return RC::SUCCESS;
+}
 
 RC Table::sync()
 {

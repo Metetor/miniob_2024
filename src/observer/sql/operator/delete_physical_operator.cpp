@@ -19,6 +19,7 @@ See the Mulan PSL v2 for more details. */
 
 RC DeletePhysicalOperator::open(Trx *trx)
 {
+  //处理子算子节点的open
   if (children_.empty()) {
     return RC::SUCCESS;
   }
@@ -32,7 +33,7 @@ RC DeletePhysicalOperator::open(Trx *trx)
   }
 
   trx_ = trx;
-
+  //get record 循环调用子节点的current_tuple
   while (OB_SUCC(rc = child->next())) {
     Tuple *tuple = child->current_tuple();
     if (nullptr == tuple) {

@@ -15,13 +15,53 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/update_physical_operator.h"
 #include "common/log/log.h"
 #include "storage/table/table.h"
+#include "storage/record/record.h"
 #include "storage/trx/trx.h"
 
-RC UpdatePhysicalOperator::open(Trx *trx) 
+RC UpdatePhysicalOperator::open(Trx *trx)
 {
-    
-    // trx->update_record(table_,record);//to be added
-    return RC::SUCCESS; 
+  // copied from delete
+  if (children_.empty()) {
+    return RC::SUCCESS;
+  }
+
+  std::unique_ptr<PhysicalOperator> &child = children_[0];
+
+  RC rc = child->open(trx);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to open child operator: %s", strrc(rc));
+    return rc;
+  }
+
+  trx_ = trx;
+  // get record 循环调用子节点的current_tuple
+  while (OB_SUCC(rc = child->next())) {
+    Tuple *tuple = child->current_tuple();
+    if (nullptr == tuple) {
+      LOG_WARN("failed to get current record: %s", strrc(rc));
+      return rc;
+    }
+
+    RowTuple *row_tuple = static_cast<RowTuple *>(tuple);
+    Record   &record    = row_tuple->record();
+    // records_.emplace_back(std::move(record));
+    // record.set_field();
+    const FieldMeta *feild_meta = table_->table_meta().field(field_name_);
+    if (feild_meta == nullptr) {
+      rc = RC::EMPTY;
+      return rc;
+    }
+
+    int field_offset = feild_meta->offset();
+    rc         = trx_->update_record(table_, record, &values_[0], field_offset);  // 待实现
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to update record: %s", strrc(rc));
+      return rc;
+    }
+  }
+  child->close();
+  // trx->update_record(table_,record);//to be added
+  return RC::SUCCESS;
 }
 
 RC UpdatePhysicalOperator::next() { return RC::RECORD_EOF; }

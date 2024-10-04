@@ -64,6 +64,13 @@ RC LogicalPlanGenerator::create(Stmt *stmt, unique_ptr<LogicalOperator> &logical
       rc = create_plan(insert_stmt, logical_operator);
     } break;
 
+    //added UPDATE by ywm
+    case StmtType::UPDATE:{
+      UpdateStmt *update_stmt=static_cast<UpdateStmt *>(stmt);
+
+      rc = create_plan(update_stmt,logical_operator);
+    }break;
+
     case StmtType::DELETE: {
       DeleteStmt *delete_stmt = static_cast<DeleteStmt *>(stmt);
 
@@ -238,31 +245,49 @@ RC LogicalPlanGenerator::create_plan(InsertStmt *insert_stmt, unique_ptr<Logical
 }
 
 //added by ywm
-// RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<LogicalOperator> &logical_operator)
-// {
-//   Table        *table = update_stmt->table();
-//   vector<Value> values(update_stmt->values(), update_stmt->values() + update_stmt->value_amount());
+RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<LogicalOperator> &logical_operator)
+{
+  Table        *table = update_stmt->table();
+  //update_stmt->values:Value* -> values:vector<Value>
+  vector<Value> values(update_stmt->values(), update_stmt->values() + update_stmt->value_amount());
+  FilterStmt                 *filter_stmt = update_stmt->filter_stmt();
+  unique_ptr<LogicalOperator> table_get_oper(new TableGetLogicalOperator(table,ReadWriteMode::READ_WRITE));
 
-//   UpdateLogicalOperator *update_operator = new UpdateLogicalOperator(table, values);
-//   logical_operator.reset(update_operator);
-//   return RC::SUCCESS;  
-// }
+  //构造谓词算子
+  unique_ptr<LogicalOperator> predicate_oper;
+  RC rc = create_plan(filter_stmt, predicate_oper);
+  if (rc != RC::SUCCESS) {
+    return rc;
+  }  
+  //构造更新算子
+  unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table,values,update_stmt->attr_name().c_str()));
+  //谓词算子add_child(get_table算子),删除算子add_child(谓词算子)
+  if (predicate_oper) {
+    predicate_oper->add_child(std::move(table_get_oper));
+    update_oper->add_child(std::move(predicate_oper));
+  } else {
+    update_oper->add_child(std::move(table_get_oper));
+  }
+  
+  logical_operator = std::move(update_oper);
+  LOG_INFO("LogicalPlanGenrator::create plan");
+  return RC::SUCCESS;
+}
 
 RC LogicalPlanGenerator::create_plan(DeleteStmt *delete_stmt, unique_ptr<LogicalOperator> &logical_operator)
 {
   Table                      *table       = delete_stmt->table();
   FilterStmt                 *filter_stmt = delete_stmt->filter_stmt();
   unique_ptr<LogicalOperator> table_get_oper(new TableGetLogicalOperator(table, ReadWriteMode::READ_WRITE));
-
+  //构造谓词算子
   unique_ptr<LogicalOperator> predicate_oper;
-
   RC rc = create_plan(filter_stmt, predicate_oper);
   if (rc != RC::SUCCESS) {
     return rc;
   }
 
   unique_ptr<LogicalOperator> delete_oper(new DeleteLogicalOperator(table));
-
+  //谓词算子add_child(get_table算子),删除算子add_child(谓词算子)
   if (predicate_oper) {
     predicate_oper->add_child(std::move(table_get_oper));
     delete_oper->add_child(std::move(predicate_oper));

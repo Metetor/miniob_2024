@@ -26,7 +26,14 @@ FilterStmt::~FilterStmt()
   }
   filter_units_.clear();
 }
-
+/// @brief 
+/// @param db 
+/// @param default_table 
+/// @param tables table_map
+/// @param conditions 
+/// @param condition_num 
+/// @param stmt 
+/// @return 
 RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
     const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt)
 {

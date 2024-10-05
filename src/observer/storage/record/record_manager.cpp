@@ -626,7 +626,6 @@ RC RecordFileHandler::recover_insert_record(const char *data, int record_size, c
 RC RecordFileHandler::update_record(const RID &rid, const char *data)
 {
   RC rc = RC::SUCCESS;
-
   unique_ptr<RecordPageHandler> record_page_handler(RecordPageHandler::create(storage_format_));
 
   rc = record_page_handler->init(*disk_buffer_pool_, *log_handler_, rid.page_num, ReadWriteMode::READ_WRITE);
@@ -636,6 +635,7 @@ RC RecordFileHandler::update_record(const RID &rid, const char *data)
   }
   // 先不考虑锁的问题
   rc = record_page_handler->update_record(rid, data);
+  LOG_INFO("update done");
   return rc;
 }
 

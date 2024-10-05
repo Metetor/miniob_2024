@@ -53,7 +53,8 @@ RC UpdatePhysicalOperator::open(Trx *trx)
     }
 
     int field_offset = feild_meta->offset();
-    rc         = trx_->update_record(table_, record, &values_[0], field_offset);  // 待实现
+    LOG_INFO("field_offset:%d",field_offset);
+    rc         = trx_->update_record(table_, record.rid(), values_[0], field_offset);  // 待实现
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to update record: %s", strrc(rc));
       return rc;

@@ -45,7 +45,7 @@ public:
   virtual ~VacuousTrx() = default;
 
   RC insert_record(Table *table, Record &record) override;
-  RC update_record(Table *table,Record &record,const Value *values, int field_offset)  override;
+  RC update_record(Table *table,const RID &rid,const Value &value, int field_offset)  override;
   RC delete_record(Table *table, Record &record) override;
   RC visit_record(Table *table, Record &record, ReadWriteMode mode) override;
   RC start_if_need() override;

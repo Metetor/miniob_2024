@@ -52,6 +52,14 @@ public:
   virtual RC insert_entry(const char *record, const RID *rid) = 0;
 
   /**
+   * @brief 更新一条数据
+   *
+   * @param record 更新的记录数据，当前假设记录是定长的
+   * @param[out] rid   更新的记录的位置
+   */
+  virtual RC update_entry(const char *record, const RID *rid) = 0;
+
+  /**
    * @brief 删除一条数据
    *
    * @param record 删除的记录，当前假设记录是定长的

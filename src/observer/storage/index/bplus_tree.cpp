@@ -1831,6 +1831,22 @@ RC BplusTreeHandler::delete_entry(const char *user_key, const RID *rid)
   return rc;
 }
 
+RC BplusTreeHandler:: update_entry(const char *user_key, const RID *rid)
+{
+  if (user_key == nullptr || rid == nullptr) {
+    LOG_WARN("Invalid arguments, key is empty or rid is empty");
+    return RC::INVALID_ARGUMENT;
+  }
+  //朴素实现:先delete再insert,后期或许可以实现原子操作here
+  /*先delete后insert总是会出现锁冲突，why*/
+  RC rc = RC::SUCCESS;
+
+  // rc = delete_entry(user_key, rid);
+  // LOG_INFO("%s",user_key);
+  // if(rc != RC::SUCCESS)
+  //   return rc;
+  // return insert_entry(user_key, rid);
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 BplusTreeScanner::BplusTreeScanner(BplusTreeHandler &tree_handler)

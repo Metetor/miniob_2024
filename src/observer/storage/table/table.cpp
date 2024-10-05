@@ -556,28 +556,30 @@ Index *Table::find_index_by_field(const char *field_name) const
 }
 
 // added update_record by ywm
-RC Table::update_record(Record &record, const Value *values, int field_offset)
+RC Table::update_record(const RID &rid, const Value &value, int field_offset)
 {
   RC rc = RC::SUCCESS;
-  // 这一部分之后可以考虑拆分出去
   // some check还没有考虑，待增加
+
+  // 首先，根据rid得到record
+  Record record;
+  rc = get_record(rid, record);
+  if (OB_FAIL(rc)) {
+    return rc;
+  }
   // 参考make_record实现record_data的更新
-  Record copy_record;
-  copy_record.copy_data(record.data(), record.len());
-  const int        normal_field_start_index = table_meta_.sys_field_num();
-  const FieldMeta *field                    = table_meta_.field(field_offset + normal_field_start_index);
-  const Value     &value                    = values[0];
+  const FieldMeta *field = table_meta_.find_field_by_offset(field_offset);
   if (field->type() != value.attr_type()) {
     Value real_value;
     rc = Value::cast_to(value, field->type(), real_value);
     if (OB_FAIL(rc)) {
       LOG_WARN("failed to cast value. table name:%s,field name:%s,value:%s ",
-            table_meta_.name(), field->name(), value.to_string().c_str());
+             table_meta_.name(), field->name(), value.to_string().c_str());
       return rc;
     }
-    rc = set_value_to_record(copy_record.data(), real_value, field);
+    rc = set_value_to_record(record.data(), real_value, field);
   } else {
-    rc = set_value_to_record(copy_record.data(), value, field);
+    rc = set_value_to_record(record.data(), value, field);
   }
 
   if (OB_FAIL(rc)) {
@@ -585,13 +587,16 @@ RC Table::update_record(Record &record, const Value *values, int field_offset)
     return rc;
   }
 
-  // 不能直接在record上做修改，而是应该在copy_record_data修改，防止后续
-  // update_record失败但是record_data却已经更新了
-  rc = record_handler_->update_record(record.rid(),copy_record.data());
-  // 一些状态检查和处理待做
-  return RC::SUCCESS;
+  return update_record(record);
 }
 
+RC Table::update_record(const Record &record)
+{
+  LOG_INFO("table update_record");
+  RC rc = RC::SUCCESS;
+  rc = record_handler_->update_record(record.rid(), record.data());
+  return rc;
+}
 RC Table::sync()
 {
   RC rc = RC::SUCCESS;

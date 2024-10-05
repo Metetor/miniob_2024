@@ -82,8 +82,11 @@ public:
    * @param record[in/out] 传入的数据包含具体的数据，插入成功会通过此字段返回RID
    */
   RC insert_record(Record &record);
-  //目前只支持一个value的更新，所以一个Int field_offset来标识field
-  RC update_record(Record &record,const Value* values,int field_offset);//added by ywm
+  //目前只支持一个value的更新，Int field_offset来标识field
+  RC update_record(const RID &rid,const Value &value,int field_offset);//added by ywm
+  //另外增加update_record(const Record &record)
+  RC update_record(const Record &record);
+  
   RC delete_record(const Record &record);
   RC delete_record(const RID &rid);
   RC get_record(const RID &rid, Record &record);

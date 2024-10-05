@@ -39,7 +39,8 @@ RC SqlTaskHandler::handle_event(Communicator *communicator)
     LOG_TRACE("failed to handle sql. rc=%s", strrc(rc));
     event->sql_result()->set_return_code(rc);
   }
-
+  LOG_INFO("handle_sql ss");
+  
   bool need_disconnect = false;
 
   rc = communicator->write_result(event, need_disconnect);
@@ -85,6 +86,7 @@ RC SqlTaskHandler::handle_sql(SQLStageEvent *sql_event)
   }
 
   rc = execute_stage_.handle_request(sql_event);
+  LOG_INFO("execute success");
   if (OB_FAIL(rc)) {
     LOG_TRACE("failed to do execute. rc=%s", strrc(rc));
     return rc;

@@ -492,6 +492,14 @@ public:
   RC insert_entry(const char *user_key, const RID *rid);
 
   /**
+   * @brief 此函数向IndexHandle对应的索引中更新一个索引项。
+   * @details 参数user_key指向要更新的属性值，参数rid标识该索引项对应的元组，
+   * 即向索引中更新一个值为（user_key，rid）的键值对
+   * @note 这里假设user_key的内存大小与attr_length 一致
+   */
+  RC update_entry(const char *user_key, const RID *rid);
+
+  /**
    * @brief 从IndexHandle句柄对应的索引中删除一个值为（user_key，rid）的索引项
    * @return RECORD_INVALID_KEY 指定值不存在
    * @note 这里假设user_key的内存大小与attr_length 一致

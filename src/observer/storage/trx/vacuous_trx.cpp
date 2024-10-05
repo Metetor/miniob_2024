@@ -34,7 +34,7 @@ LogReplayer *VacuousTrxKit::create_log_replayer(Db &, LogHandler &) { return new
 
 RC VacuousTrx::insert_record(Table *table, Record &record) { return table->insert_record(record); }
 
-RC VacuousTrx::update_record(Table *table,Record &record,const Value *values, int field_offset) {return table->update_record(record,values,field_offset);}
+RC VacuousTrx::update_record(Table *table,const RID &rid,const Value &value, int field_offset) {return table->update_record(rid,value,field_offset);}
 
 RC VacuousTrx::delete_record(Table *table, Record &record) { return table->delete_record(record); }
 

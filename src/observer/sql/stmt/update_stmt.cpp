@@ -50,6 +50,13 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
     LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
     return RC::SCHEMA_TABLE_NOT_EXIST;
   }
+  // check whether the attribute exists
+  const FieldMeta* field = table->table_meta().field(update.attribute_name.c_str());
+  if (nullptr == field) {
+    LOG_WARN("no such field in table: table %s, field %s", table->name(), update.attribute_name.c_str());
+    table = nullptr;
+    return RC::SCHEMA_FIELD_NOT_EXIST;
+  }
   // update t1 set c1 = 1 where id =1
   /*TODO Later*/
   //check attribute name exist

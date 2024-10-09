@@ -11,12 +11,40 @@ See the Mulan PSL v2 for more details. */
 //
 // Created by Wangyunlai on 2022/07/05.
 //
-
+#include<regex>
 #include "sql/expr/expression.h"
 #include "sql/expr/tuple.h"
 #include "sql/expr/arithmetic_operator.hpp"
 
 using namespace std;
+
+//add like_match here
+static bool like_match(const Value &left, const Value &right) {
+    // 获取左右操作数的字符串
+    std::string pattern = right.data();
+    std::string text = left.data();
+
+    // 将SQL的LIKE模式转换为正则表达式
+    // 将 % 转换为 .*，将 _ 转换为 .
+    std::string regexPattern;
+    for (char c : pattern) {
+        if (c == '%') {
+            regexPattern += ".*";
+        } else if (c == '_') {
+            regexPattern += ".";
+        } else {
+            // 转义特殊字符
+            if (std::string("()[]{}^$|.*+?\\").find(c) != std::string::npos) {
+                regexPattern += '\\';
+            }
+            regexPattern += c;
+        }
+    }
+
+    // 使用正则表达式匹配
+    std::regex regexObj(regexPattern);
+    return std::regex_match(text, regexObj);
+}
 
 RC FieldExpr::get_value(const Tuple &tuple, Value &value) const
 {
@@ -121,7 +149,7 @@ ComparisonExpr::~ComparisonExpr() {}
 RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &result) const
 {
   RC  rc         = RC::SUCCESS;
-  int cmp_result = left.compare(right);
+  int cmp_result = comp_==LIKE_OP?like_match(left,right):left.compare(right);
   result         = false;
   switch (comp_) {
     case EQUAL_TO: {
@@ -142,6 +170,10 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
     case GREAT_THAN: {
       result = (cmp_result > 0);
     } break;
+    //add like case here
+    case LIKE_OP: {
+      result = cmp_result ;
+    }break;
     default: {
       LOG_WARN("unsupported comparison. %d", comp_);
       rc = RC::INTERNAL;

@@ -124,6 +124,7 @@ SUM                                     RETURN_TOKEN(SUM);
 AVG                                     RETURN_TOKEN(AVG);
 MAX                                     RETURN_TOKEN(MAX);
 MIN                                     RETURN_TOKEN(MIN);
+LIKE                                    RETURN_TOKEN(LIKE);
 
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
 "("                                     RETURN_TOKEN(LBRACE);

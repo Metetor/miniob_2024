@@ -416,11 +416,12 @@ RC ExpressionBinder::bind_aggregate_expression(
     LOG_WARN("invalid aggregate name: %s", aggregate_name);
     return rc;
   }
-
+  LOG_INFO("bind_aggregate_expression::type_from_string");
   unique_ptr<Expression>        &child_expr = unbound_aggregate_expr->child();
   vector<unique_ptr<Expression>> child_bound_expressions;
 
   if (child_expr->type() == ExprType::STAR && aggregate_type == AggregateExpr::Type::COUNT) {
+    //count(*)的处理,这里直接传入ValueExpr(Value(1))是不是存在问题？？
     ValueExpr *value_expr = new ValueExpr(Value(1));
     child_expr.reset(value_expr);
   } else {
@@ -438,14 +439,15 @@ RC ExpressionBinder::bind_aggregate_expression(
       child_expr.reset(child_bound_expressions[0].release());
     }
   }
-
+  LOG_INFO("bind_aggregate_expression::bind");
+  //check
   auto aggregate_expr = make_unique<AggregateExpr>(aggregate_type, std::move(child_expr));
   aggregate_expr->set_name(unbound_aggregate_expr->name());
   rc = check_aggregate_expression(*aggregate_expr);
   if (OB_FAIL(rc)) {
     return rc;
   }
-
+  LOG_INFO("bind_aggregate_expression::check");
   bound_expressions.emplace_back(std::move(aggregate_expr));
   return RC::SUCCESS;
 }

@@ -42,6 +42,17 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   return expr;
 }
 
+//add AggregateExpr *create_aggregate_expression here
+AggregateExpr *create_aggregate_expression(AggregateExpr::Type type,
+                                           Expression *child,
+                                           const char *sql_string,
+                                           YYLTYPE *llocp)
+{
+  AggregateExpr *expr= new AggregateExpr(type,child);
+  expr->set_name(token_name(sql_string,llocp));
+  return expr;
+}
+
 UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
                                            Expression *child,
                                            const char *sql_string,
@@ -113,7 +124,12 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         LE
         GE
         NE
-
+        //聚合tokens
+        MAX
+        MIN
+        COUNT
+        AVG
+        SUM
 /** union 中定义各种数据类型，真实生成的代码也是union类型，所以不能有非POD类型的数据 **/
 %union {
   ParsedSqlNode *                            sql_node;
@@ -581,8 +597,24 @@ expression:
       $$ = new StarExpr();
     }
     // your code here
+    //先分别增加聚合函数，之后再考虑是否能够增加一个aggregate_type和arithmetic_expression
+    | COUNT LBRACE expression RBRACE {
+      //调用create_aggregate_expression
+      $$ = create_aggregate_expression("count", $3,sql_string, &@$);
+    }
+    | SUM LBRACE expression RBRACE {
+      $$ = create_aggregate_expression("sum", $3,sql_string, &@$);
+    }
+    | AVG LBRACE expression RBRACE {
+      $$ = create_aggregate_expression("avg", $3,sql_string, &@$);
+    }
+    | MAX LBRACE expression RBRACE {
+      $$ = create_aggregate_expression("max", $3,sql_string, &@$);
+    }
+    | MIN LBRACE expression RBRACE {
+      $$ = create_aggregate_expression("min", $3,sql_string, &@$);
+    }
     ;
-
 rel_attr:
     ID {
       $$ = new RelAttrSqlNode;

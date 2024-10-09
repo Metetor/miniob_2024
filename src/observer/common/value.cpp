@@ -241,6 +241,9 @@ string Value::to_string() const
   return res;
 }
 
+/// @brief 
+/// @param other 比较的右值
+/// @return 1:大于；-1：小于；0：等于；INT32_MAX:未实现的比较
 int Value::compare(const Value &other) const { return DataType::type_instance(this->attr_type_)->compare(*this, other); }
 
 int Value::get_int() const

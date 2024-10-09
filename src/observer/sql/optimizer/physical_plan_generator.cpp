@@ -224,6 +224,7 @@ RC PhysicalPlanGenerator::create_plan(PredicateLogicalOperator &pred_oper, uniqu
 
 RC PhysicalPlanGenerator::create_plan(ProjectLogicalOperator &project_oper, unique_ptr<PhysicalOperator> &oper)
 {
+  //这里得到的child_opers应该是group_by_oper
   vector<unique_ptr<LogicalOperator>> &child_opers = project_oper.children();
 
   unique_ptr<PhysicalOperator> child_phy_oper;
@@ -231,14 +232,14 @@ RC PhysicalPlanGenerator::create_plan(ProjectLogicalOperator &project_oper, uniq
   RC rc = RC::SUCCESS;
   if (!child_opers.empty()) {
     LogicalOperator *child_oper = child_opers.front().get();
-
+    //这里create递归执行，直到最底层算子对表的操作
     rc = create(*child_oper, child_phy_oper);
     if (OB_FAIL(rc)) {
       LOG_WARN("failed to create project logical operator's child physical operator. rc=%s", strrc(rc));
       return rc;
     }
   }
-
+  //project
   auto project_operator = make_unique<ProjectPhysicalOperator>(std::move(project_oper.expressions()));
   if (child_phy_oper) {
     project_operator->add_child(std::move(child_phy_oper));

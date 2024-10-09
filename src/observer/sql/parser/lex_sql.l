@@ -119,6 +119,12 @@ GROUP                                   RETURN_TOKEN(GROUP);
 BY                                      RETURN_TOKEN(BY);
 STORAGE                                 RETURN_TOKEN(STORAGE);
 FORMAT                                  RETURN_TOKEN(FORMAT);
+COUNT                                   RETURN_TOKEN(COUNT);
+SUM                                     RETURN_TOKEN(SUM);
+AVG                                     RETURN_TOKEN(AVG);
+MAX                                     RETURN_TOKEN(MAX);
+MIN                                     RETURN_TOKEN(MIN);
+
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
 "("                                     RETURN_TOKEN(LBRACE);
 ")"                                     RETURN_TOKEN(RBRACE);

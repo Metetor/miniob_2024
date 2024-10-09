@@ -1846,6 +1846,7 @@ RC BplusTreeHandler:: update_entry(const char *user_key, const RID *rid)
   // if(rc != RC::SUCCESS)
   //   return rc;
   // return insert_entry(user_key, rid);
+  return rc;
 }
 ////////////////////////////////////////////////////////////////////////////////
 

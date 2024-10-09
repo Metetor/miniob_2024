@@ -32,6 +32,41 @@ protected:
 class SumAggregator : public Aggregator
 {
 public:
+  SumAggregator(){value_=Value(0);};
+  RC accumulate(const Value &value) override;
+  RC evaluate(Value &result) override;
+};
+
+//参考SumAggregator add other aggragator here
+class CountAggregator : public Aggregator
+{
+public:
+  CountAggregator(){value_=Value(0);}
+  RC accumulate(const Value &value) override;
+  RC evaluate(Value &result) override;
+};
+
+class AvgAggregator : public Aggregator
+{
+public:
+  AvgAggregator():value_cnt_(0) {value_=Value(0);}
+  RC accumulate(const Value &value) override;
+  RC evaluate(Value &result) override;
+protected:
+//增加一个value_cnt_用于计算记录count
+  Value value_cnt_;
+};
+
+class MaxAggregator : public Aggregator
+{
+public:
+  RC accumulate(const Value &value) override;
+  RC evaluate(Value &result) override;
+};
+
+class MinAggregator : public Aggregator
+{
+public:
   RC accumulate(const Value &value) override;
   RC evaluate(Value &result) override;
 };

@@ -162,6 +162,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <value>               value
 %type <number>              number
 %type <string>              relation
+%type <string>              aggr_name
 %type <comp>                comp_op
 %type <rel_attr>            rel_attr
 %type <attr_infos>          attr_def_list
@@ -597,8 +598,18 @@ expression:
       $$ = new StarExpr();
     }
     // your code here
-    //先分别增加聚合函数，之后再考虑是否能够增加一个aggregate_type和arithmetic_expression
-    | COUNT LBRACE expression RBRACE {
+    | aggr_name LBRACE expression RBRACE {
+      $$ =create_aggregate_expression($1,$3,sql_string,&@$);
+    }
+    | aggr_name LBRACE RBRACE {
+      $$ = create_aggregate_expression($1,nullptr,sql_string,&@$);
+    }
+    | aggr_name LBRACE expression COMMA expression_list RBRACE {
+      $$ = create_aggregate_expression($1,nullptr,sql_string,&@$);
+    }
+    //other invalid conditions
+    //先分别增加聚合函数，之后再考虑是否能够增加一个aggregate_type
+    /* | COUNT LBRACE expression RBRACE {
       //调用create_aggregate_expression
       $$ = create_aggregate_expression("count", $3,sql_string, &@$);
     }
@@ -613,6 +624,23 @@ expression:
     }
     | MIN LBRACE expression RBRACE {
       $$ = create_aggregate_expression("min", $3,sql_string, &@$);
+    } */
+    ;
+aggr_name:
+    COUNT {
+      $$=(char *)"count";
+    }
+    | SUM {
+      $$=(char *)"sum";
+    }
+    | AVG {
+      $$=(char *)"avg";
+    }
+    | MAX {
+      $$=(char *)"max";
+    }
+    | MIN {
+      $$=(char *)"min";
     }
     ;
 rel_attr:

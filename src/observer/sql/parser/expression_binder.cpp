@@ -420,6 +420,13 @@ RC ExpressionBinder::bind_aggregate_expression(
   unique_ptr<Expression>        &child_expr = unbound_aggregate_expr->child();
   vector<unique_ptr<Expression>> child_bound_expressions;
 
+  //invalid aggregate_func's params
+  if(!child_expr)
+  {
+    LOG_WARN("invalid aggregate func argument");
+    return RC::INVALID_ARGUMENT;
+  }
+
   if (child_expr->type() == ExprType::STAR && aggregate_type == AggregateExpr::Type::COUNT) {
     //count(*)的处理,这里直接传入ValueExpr(Value(1))是不是存在问题？？
     ValueExpr *value_expr = new ValueExpr(Value(1));

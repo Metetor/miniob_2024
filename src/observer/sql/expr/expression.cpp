@@ -149,7 +149,7 @@ ComparisonExpr::~ComparisonExpr() {}
 RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &result) const
 {
   RC  rc         = RC::SUCCESS;
-  int cmp_result = comp_==LIKE_OP?like_match(left,right):left.compare(right);
+  int cmp_result=left.compare(right);
   result         = false;
   switch (comp_) {
     case EQUAL_TO: {
@@ -172,7 +172,12 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
     } break;
     //add like case here
     case LIKE_OP: {
-      result = cmp_result ;
+      cmp_result=like_match(left,right);
+      result=cmp_result;
+    }break;
+    case NOT_LIKE_OP:{
+      cmp_result=like_match(left,right);
+      result=!cmp_result;
     }break;
     default: {
       LOG_WARN("unsupported comparison. %d", comp_);

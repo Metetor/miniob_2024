@@ -76,6 +76,16 @@ RC FloatType::set_value_from_str(Value &val, const string &data) const
   return rc;
 }
 
+int FloatType::cast_cost(AttrType type){
+  if (type == AttrType::FLOATS) {
+    return 0;
+  }
+  else if(type == AttrType::INTS){
+    return 2;
+  }
+  return INT32_MAX;    
+}
+
 RC FloatType::to_string(const Value &val, string &result) const
 {
   stringstream ss;
